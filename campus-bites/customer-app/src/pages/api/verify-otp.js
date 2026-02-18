@@ -1,4 +1,4 @@
-// Uses the same global OTP store as send-otp.js
+// Uses the same global OTP store as send-otp.js (keyed by email)
 if (!global.__otpStore) global.__otpStore = {};
 const otpStore = global.__otpStore;
 
@@ -7,20 +7,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { phone, code } = req.body || {};
-  if (!phone || !code) {
-    return res.status(400).json({ message: 'Phone and code are required' });
+  const { email, code } = req.body || {};
+  if (!email || !code) {
+    return res.status(400).json({ message: 'Email and code are required' });
   }
 
   try {
-    const stored = otpStore[phone];
+    const stored = otpStore[email];
 
     if (!stored) {
       return res.status(400).json({ message: 'No OTP found. Please request a new one.' });
     }
 
     if (Date.now() > stored.expiresAt) {
-      delete otpStore[phone];
+      delete otpStore[email];
       return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
     }
 
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     }
 
     // OTP verified — clean up
-    delete otpStore[phone];
+    delete otpStore[email];
 
     return res.status(200).json({ success: true });
   } catch (error) {

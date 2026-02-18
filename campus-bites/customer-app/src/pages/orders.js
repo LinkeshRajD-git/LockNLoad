@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Package, Clock, CheckCircle, XCircle, Truck, ChefHat, ArrowLeft, User, Phone, Mail, Hash, CreditCard, Calendar } from 'lucide-react';
 import Link from 'next/link';
@@ -18,29 +18,30 @@ export default function Orders() {
       router.push('/login?returnUrl=/orders');
       return;
     }
-    loadOrders();
-  }, [user]);
 
-  const loadOrders = async () => {
-    try {
-      const q = query(
-        collection(db, 'orders'),
-        where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc')
-      );
-      const querySnapshot = await getDocs(q);
-      const ordersData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.() || new Date()
-      }));
+    // Real-time listener — no orderBy so no composite index needed
+    const q = query(
+      collection(db, 'orders'),
+      where('userId', '==', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const ordersData = snapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate?.() || new Date()
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt); // newest first
       setOrders(ordersData);
-    } catch (error) {
-      console.error('Error loading orders:', error);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, (error) => {
+      console.error('Error loading orders:', error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -201,11 +202,11 @@ export default function Orders() {
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
                     <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
                       <span className={`text-xs px-2 py-1 rounded-full border ${
-                        order.paymentMethod === 'cod' 
-                          ? 'bg-green-500/10 text-green-400 border-green-500/30' 
-                          : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                        order.paymentMethod === 'cod'
+                          ? 'bg-green-500/10 text-green-400 border-green-500/30'
+                          : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
                       }`}>
-                        {order.paymentMethod === 'cod' ? '💵 COD' : '📱 UPI'}
+                        {order.paymentMethod === 'cod' ? '💵 COD' : '💳 Online'}
                       </span>
                       <span className={`text-xs px-2 py-1 rounded-full border ${
                         order.paymentStatus === 'completed' 
@@ -287,7 +288,7 @@ export default function Orders() {
                         <CreditCard size={14} className="text-purple-400" />
                         <span className="text-sm text-gray-400">Payment:</span>
                         <span className="text-sm text-white font-medium">
-                          {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'PhonePe UPI'}
+                          {order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod === 'cashfree' ? 'Cashfree (Online)' : 'Online Payment'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

@@ -48,12 +48,12 @@ export default function OrderConfirmation() {
           <h1 className="text-3xl font-bold text-white mb-2">Order Confirmed! 🎉</h1>
           <p className="text-gray-400 mb-6">Thank you for your order. We'll prepare it right away!</p>
 
-          {/* SMS Notification Banner */}
-          {order?.userPhone && (
-            <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6 flex items-center gap-3 justify-center">
-              <MessageSquare size={20} className="text-green-400" />
-              <p className="text-green-300 text-sm font-semibold">
-                Confirmation SMS sent to {order.userPhone}
+          {/* Email Confirmation Banner */}
+          {order?.userEmail && (
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-6 flex items-center gap-3 justify-center">
+              <MessageSquare size={20} className="text-blue-400" />
+              <p className="text-blue-300 text-sm font-semibold">
+                Confirmation email sent to {order.userEmail}
               </p>
             </div>
           )}
@@ -86,7 +86,7 @@ export default function OrderConfirmation() {
                         ? 'bg-yellow-500/20 text-yellow-400' 
                         : 'bg-purple-500/20 text-purple-400'
                     }`}>
-                      {method === 'cod' ? '💵 Cash on Delivery' : '📱 UPI Payment'}
+                      {method === 'cod' ? '💵 Cash on Delivery' : method === 'cashfree' ? '💳 Cashfree (Online)' : '💳 Online Payment'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">

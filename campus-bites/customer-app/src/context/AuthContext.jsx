@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pendingPhone, setPendingPhone] = useState(null);
+  const [pendingEmail, setPendingEmail] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -130,6 +131,57 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Send OTP to Email (primary method used in checkout)
+  const sendEmailOTP = async (email) => {
+    try {
+      const res = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to send OTP');
+      }
+
+      setPendingEmail(email);
+      toast.success('OTP sent to your email!');
+      return true;
+    } catch (error) {
+      console.error('Error sending email OTP:', error);
+      toast.error(error.message || 'Failed to send OTP. Please try again.');
+      throw error;
+    }
+  };
+
+  // Verify Email OTP
+  const verifyEmailOTP = async (otp) => {
+    try {
+      const emailToVerify = pendingEmail;
+      if (!emailToVerify) throw new Error('No pending email for OTP verification');
+
+      const res = await fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailToVerify, code: otp })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Invalid OTP');
+      }
+
+      setPendingEmail(null);
+      toast.success('Verified successfully!');
+      return true;
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      toast.error(error.message || 'Invalid OTP. Please try again.');
+      throw error;
+    }
+  };
+
   // Login
   const login = async (email, password) => {
     try {
@@ -231,7 +283,9 @@ export const AuthProvider = ({ children }) => {
     signInWithGoogle,
     signInWithApple,
     sendPhoneOTP,
-    verifyPhoneOTP
+    verifyPhoneOTP,
+    sendEmailOTP,
+    verifyEmailOTP
   };
 
   return (

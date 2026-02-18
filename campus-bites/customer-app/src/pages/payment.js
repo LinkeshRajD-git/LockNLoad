@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -15,19 +15,6 @@ function generateOrderId() {
     String(now.getDate()).padStart(2, '0');
   const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
   return `LNL-${datePart}-${randomPart}`;
-}
-
-// Send order confirmation SMS
-async function sendOrderSMS(orderDetails) {
-  try {
-    await fetch('/api/send-order-sms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderDetails)
-    });
-  } catch (error) {
-    console.error('Failed to send order SMS:', error);
-  }
 }
 
 // Send order confirmation Email
@@ -49,17 +36,15 @@ export default function Payment() {
   const { cart, getTotal, clearCart } = useCart();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const processingRef = useRef(false);
 
   useEffect(() => {
-    if (!user || cart.length === 0) {
-      router.push('/');
-      return;
-    }
-
-    if (method) {
-      processPayment();
-    }
-  }, [method, user, cart]);
+    if (!router.isReady) return;
+    if (!user || !method) return;
+    if (processingRef.current) return;
+    processingRef.current = true;
+    processPayment();
+  }, [router.isReady, method]);
 
   const processPayment = async () => {
     setLoading(true);
@@ -94,18 +79,6 @@ export default function Payment() {
       };
 
       const docRef = await addDoc(collection(db, 'orders'), orderData);
-
-      // Send SMS with order details (orderId, contents, price)
-      if (customerPhone) {
-        await sendOrderSMS({
-          phone: customerPhone,
-          customerName: customerName,
-          orderId: uniqueOrderId,
-          orderItems: orderData.items,
-          totalAmount: totalAmount,
-          paymentMethod: 'cod'
-        });
-      }
 
       // Send confirmation email
       if (user.email) {
