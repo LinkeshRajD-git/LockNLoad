@@ -7,12 +7,13 @@ import toast from 'react-hot-toast';
 
 export default function Login() {
   const router = useRouter();
-  const { login, user, signInWithGoogle, signInWithApple } = useAuth();
+  const { login, user, signInWithGoogle, signInWithApple, resetPassword } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -40,6 +41,21 @@ export default function Login() {
       console.error('Login error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      toast.error('Please enter your email address first');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await resetPassword(formData.email);
+    } catch (error) {
+      // error toast already shown in AuthContext
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -88,6 +104,17 @@ export default function Login() {
               className="w-full pl-12 pr-4 py-3.5 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:border-[#E94E24] focus:bg-gray-800 text-white placeholder-gray-400 transition-all"
               placeholder="Enter your password"
             />
+          </div>
+
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={resetLoading}
+              className="text-sm text-[#E94E24] hover:text-red-400 hover:underline transition-colors disabled:opacity-50"
+            >
+              {resetLoading ? 'Sending...' : 'Forgot Password?'}
+            </button>
           </div>
 
           <button
