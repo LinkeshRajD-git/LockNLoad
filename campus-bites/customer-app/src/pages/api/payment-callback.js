@@ -1,6 +1,4 @@
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase-admin-init';
-import twilio from 'twilio';
+// PhonePe server-side callback handler (legacy - main flow handled client-side)
 
 // This endpoint is called by PhonePe after payment completion
 export default async function handler(req, res) {
