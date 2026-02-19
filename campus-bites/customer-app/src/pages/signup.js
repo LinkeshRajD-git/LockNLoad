@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 
 export default function SignUp() {
   const router = useRouter();
-  const { signUp, sendPhoneOTP, user, signInWithGoogle, signInWithApple } = useAuth();
+  const { signUp, user, signInWithGoogle, signInWithApple } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -49,15 +49,8 @@ export default function SignUp() {
     try {
       // Create user account
       await signUp(formData.email, formData.password, formData.name, formData.phone);
-      
-      // Send OTP to phone
-      await sendPhoneOTP(formData.phone);
-      
-      // Redirect to OTP verification
-      router.push({
-        pathname: '/verify-otp',
-        query: { phone: formData.phone }
-      });
+      toast.success('Account created successfully! Welcome to Lock N Load! 🔥');
+      router.push('/');
     } catch (error) {
       console.error('Signup error:', error);
       toast.error(error.message || 'Failed to create account');

@@ -182,6 +182,23 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Reset Password
+  const resetPassword = async (email) => {
+    const { sendPasswordResetEmail } = await import('firebase/auth');
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast.success('Password reset email sent! Check your inbox.');
+      return true;
+    } catch (error) {
+      const msgs = {
+        'auth/user-not-found': 'No account found with this email.',
+        'auth/invalid-email': 'Invalid email address.',
+      };
+      toast.error(msgs[error.code] || 'Failed to send reset email.');
+      throw error;
+    }
+  };
+
   // Login
   const login = async (email, password) => {
     try {
@@ -190,13 +207,23 @@ export const AuthProvider = ({ children }) => {
       const profile = await getDoc(doc(db, 'users', userCredential.user.uid));
       if (!profile.exists()) {
         await signOut(auth);
-        toast.error('Account has been removed. Please contact support.');
+        toast.error('No account profile found. Please sign up first.');
         throw new Error('Account removed');
       }
-      toast.success('Login successful!');
+      toast.success('Welcome back! 🔥');
       return userCredential.user;
     } catch (error) {
-      toast.error('Invalid email or password');
+      if (error.message === 'Account removed') throw error;
+      const errorMessages = {
+        'auth/user-not-found': 'No account found with this email. Please sign up first.',
+        'auth/wrong-password': 'Incorrect password. Please try again.',
+        'auth/invalid-credential': 'Invalid email or password. Please check your credentials.',
+        'auth/invalid-email': 'Please enter a valid email address.',
+        'auth/user-disabled': 'This account has been disabled. Contact support.',
+        'auth/too-many-requests': 'Too many failed attempts. Please wait a few minutes and try again.',
+        'auth/network-request-failed': 'Network error. Please check your internet connection.',
+      };
+      toast.error(errorMessages[error.code] || 'Login failed. Please try again.');
       throw error;
     }
   };
@@ -280,6 +307,7 @@ export const AuthProvider = ({ children }) => {
     signUp,
     login,
     logout,
+    resetPassword,
     signInWithGoogle,
     signInWithApple,
     sendPhoneOTP,
