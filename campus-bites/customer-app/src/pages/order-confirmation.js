@@ -86,7 +86,7 @@ export default function OrderConfirmation() {
                         ? 'bg-yellow-500/20 text-yellow-400' 
                         : 'bg-purple-500/20 text-purple-400'
                     }`}>
-                      {method === 'cod' ? '💵 Cash on Delivery' : method === 'cashfree' ? '💳 Cashfree (Online)' : '💳 Online Payment'}
+                      {method === 'razorpay' ? '💳 Razorpay (Online)' : '💳 Online Payment'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">

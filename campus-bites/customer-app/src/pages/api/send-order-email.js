@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       },
     });
 
-    const paymentMode = paymentMethod === 'cod' ? 'Cash on Delivery' : paymentMethod === 'cashfree' ? 'Online Payment (Cashfree)' : 'Online Payment';
+    const paymentMode = paymentMethod === 'razorpay' ? 'Online Payment (Razorpay)' : 'Online Payment';
 
     // Build items table rows
     const itemsRows = (orderItems || [])

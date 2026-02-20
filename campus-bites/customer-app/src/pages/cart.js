@@ -12,7 +12,7 @@ export default function Cart() {
   const [couponApplied, setCouponApplied] = useState(false);
 
   const subtotal = getTotal();
-  const discount = couponApplied && subtotal > 300 ? (subtotal * 0.15).toFixed(2) : 0;
+  const discount = couponApplied && subtotal > 299 ? (subtotal * 0.10).toFixed(2) : 0;
   const finalTotal = (subtotal - discount).toFixed(2);
 
   const handleCheckout = () => {
@@ -24,7 +24,7 @@ export default function Cart() {
   };
 
   const applyCoupon = () => {
-    if (subtotal > 300) {
+    if (subtotal > 299) {
       setCouponApplied(true);
     }
   };
@@ -121,36 +121,36 @@ export default function Cart() {
           </div>
 
           {/* Coupon Section */}
-          {subtotal > 300 && !couponApplied && (
+          {subtotal > 299 && !couponApplied && (
             <div className="mb-4 p-4 bg-gradient-to-r from-[#E94E24]/20 to-yellow-500/20 border border-[#E94E24]/50 rounded-xl">
               <div className="flex items-center gap-2 mb-3">
                 <Zap size={20} className="text-[#E94E24]" />
                 <p className="font-semibold text-[#E94E24]">Exclusive Offer Available!</p>
               </div>
               <p className="text-sm text-amber-200 mb-3">
-                Order amount is above ₹300! Claim <span className="font-bold">15% OFF</span> on your purchase.
+                Order amount is above ₹299! Claim <span className="font-bold">10% OFF</span> on your purchase.
               </p>
               <button
                 onClick={applyCoupon}
                 className="w-full bg-gradient-to-r from-[#E94E24] to-yellow-500 text-black py-2 rounded-lg font-bold hover:from-red-600 hover:to-yellow-600 transition-all text-sm"
               >
-                Claim 15% Discount
+                Claim 10% Discount
               </button>
             </div>
           )}
 
-          {couponApplied && subtotal > 300 && (
+          {couponApplied && subtotal > 299 && (
             <div className="mb-4 p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/50 rounded-xl">
               <div className="flex items-center gap-2">
                 <Zap size={20} className="text-green-400" />
-                <p className="font-semibold text-green-300">✓ 15% Discount Applied!</p>
+                <p className="font-semibold text-green-300">✓ 10% Discount Applied!</p>
               </div>
             </div>
           )}
 
           {discount > 0 && (
             <div className="flex justify-between items-center mb-4">
-              <span className="text-base sm:text-lg font-semibold text-green-400">Discount (15%):</span>
+              <span className="text-base sm:text-lg font-semibold text-green-400">Discount (10%):</span>
               <span className="text-lg font-bold text-green-400">-₹{discount}</span>
             </div>
           )}
