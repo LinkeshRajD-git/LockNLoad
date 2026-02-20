@@ -148,12 +148,11 @@ export default function Login() {
           <button
             onClick={async () => {
               try {
-                const result = await signInWithGoogle();
-                if (result) {
-                  const returnUrl = router.query.returnUrl || '/';
-                  router.push(returnUrl);
-                }
-              } catch (e) { /* handled in context */ }
+                await signInWithGoogle();
+                // Don't manually redirect - let useEffect handle it via user state change
+              } catch (e) { 
+                // Error already handled in context
+              }
             }}
             className="w-full flex items-center justify-center gap-3 bg-white text-gray-800 py-3.5 rounded-xl hover:bg-gray-100 transition-all font-semibold text-lg shadow-lg"
           >
@@ -163,12 +162,11 @@ export default function Login() {
           <button
             onClick={async () => {
               try {
-                const result = await signInWithApple();
-                if (result) {
-                  const returnUrl = router.query.returnUrl || '/';
-                  router.push(returnUrl);
-                }
-              } catch (e) { /* handled in context */ }
+                await signInWithApple();
+                // Don't manually redirect - let useEffect handle it via user state change
+              } catch (e) { 
+                // Error already handled in context
+              }
             }}
             className="w-full flex items-center justify-center gap-3 bg-black text-white py-3.5 rounded-xl hover:bg-gray-900 transition-all font-semibold text-lg shadow-lg border border-gray-700"
           >

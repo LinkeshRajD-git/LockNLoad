@@ -30,13 +30,33 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          setUser({ ...user, ...userDoc.data() });
-        } else {
-          // If the auth account exists but the profile is deleted, force logout
-          await signOut(auth);
-          setUser(null);
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUser({ ...user, ...userDoc.data() });
+          } else {
+            // If profile doesn't exist, create it automatically (for social logins)
+            await setDoc(doc(db, 'users', user.uid), {
+              email: user.email,
+              name: user.displayName || '',
+              phone: user.phoneNumber || '',
+              createdAt: new Date(),
+              isVerified: true,
+              authProvider: user.providerData?.[0]?.providerId || 'email'
+            }, { merge: true });
+            // Set user with the created profile
+            setUser({ 
+              ...user,
+              email: user.email,
+              name: user.displayName || '',
+              phone: user.phoneNumber || '',
+              isVerified: true
+            });
+          }
+        } catch (error) {
+          console.error('Error syncing user profile:', error);
+          // Still set user even if profile sync fails
+          setUser(user);
         }
       } else {
         setUser(null);
@@ -243,29 +263,14 @@ export const AuthProvider = ({ children }) => {
   const signInWithGoogle = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      
-      // Check if user profile exists, if not create one
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, 'users', user.uid), {
-          email: user.email,
-          name: user.displayName || '',
-          phone: user.phoneNumber || '',
-          createdAt: new Date(),
-          isVerified: true,
-          authProvider: 'google'
-        });
-      }
-      
       toast.success('Signed in with Google!');
-      return user;
+      return result.user;
     } catch (error) {
       if (error.code === 'auth/popup-closed-by-user') {
         return null;
       }
       console.error('Google sign-in error:', error);
-      toast.error('Google sign-in failed');
+      toast.error('Google sign-in failed: ' + error.message);
       throw error;
     }
   };
@@ -274,29 +279,14 @@ export const AuthProvider = ({ children }) => {
   const signInWithApple = async () => {
     try {
       const result = await signInWithPopup(auth, appleProvider);
-      const user = result.user;
-      
-      // Check if user profile exists, if not create one
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, 'users', user.uid), {
-          email: user.email,
-          name: user.displayName || '',
-          phone: user.phoneNumber || '',
-          createdAt: new Date(),
-          isVerified: true,
-          authProvider: 'apple'
-        });
-      }
-      
       toast.success('Signed in with Apple!');
-      return user;
+      return result.user;
     } catch (error) {
       if (error.code === 'auth/popup-closed-by-user') {
         return null;
       }
       console.error('Apple sign-in error:', error);
-      toast.error('Apple sign-in failed');
+      toast.error('Apple sign-in failed: ' + error.message);
       throw error;
     }
   };
