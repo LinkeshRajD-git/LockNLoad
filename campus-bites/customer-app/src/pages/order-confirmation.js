@@ -81,14 +81,16 @@ export default function OrderConfirmation() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Payment Method:</span>
-                    <span className={`font-semibold px-3 py-1 rounded-lg text-sm ${
-                      method === 'cod' 
-                        ? 'bg-yellow-500/20 text-yellow-400' 
-                        : 'bg-purple-500/20 text-purple-400'
-                    }`}>
+                    <span className="font-semibold px-3 py-1 rounded-lg text-sm bg-purple-500/20 text-purple-400">
                       {method === 'razorpay' ? '💳 Razorpay (Online)' : '💳 Online Payment'}
                     </span>
                   </div>
+                  {order.discount > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Discount (10% off):</span>
+                      <span className="font-semibold text-green-400">-₹{order.discount}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Total Amount:</span>
                     <span className="font-bold text-xl text-[#E94E24]">₹{order.totalAmount}</span>

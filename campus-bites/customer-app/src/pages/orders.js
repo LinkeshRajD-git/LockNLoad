@@ -201,12 +201,8 @@ export default function Orders() {
                   {/* Quick summary */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
                     <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-                      <span className={`text-xs px-2 py-1 rounded-full border ${
-                        order.paymentMethod === 'cod'
-                          ? 'bg-green-500/10 text-green-400 border-green-500/30'
-                          : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                      }`}>
-                        {order.paymentMethod === 'cod' ? '💵 COD' : '💳 Online'}
+                      <span className="text-xs px-2 py-1 rounded-full border bg-blue-500/10 text-blue-400 border-blue-500/30">
+                        {order.paymentMethod === 'razorpay' ? '💳 Razorpay' : '💳 Online'}
                       </span>
                       <span className={`text-xs px-2 py-1 rounded-full border ${
                         order.paymentStatus === 'completed' 
@@ -288,7 +284,7 @@ export default function Orders() {
                         <CreditCard size={14} className="text-purple-400" />
                         <span className="text-sm text-gray-400">Payment:</span>
                         <span className="text-sm text-white font-medium">
-                          {order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod === 'cashfree' ? 'Cashfree (Online)' : 'Online Payment'}
+                          {order.paymentMethod === 'razorpay' ? 'Razorpay (Online)' : 'Online Payment'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
