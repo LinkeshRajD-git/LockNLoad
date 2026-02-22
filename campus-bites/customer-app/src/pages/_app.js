@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import Navbar from '../components/Layout/Navbar';
 import Footer from '../components/Layout/Footer';
 import BottomNav from '../components/Layout/BottomNav';
+import MobileTopNav from '../components/Layout/MobileTopNav';
 import BackgroundVideo from '../components/Layout/BackgroundVideo';
 
 export default function App({ Component, pageProps }) {
@@ -13,6 +14,7 @@ export default function App({ Component, pageProps }) {
       <CartProvider>
         <BackgroundVideo />
         <Navbar />
+        <MobileTopNav />
         <Component {...pageProps} />
         <Footer />
         <BottomNav />
