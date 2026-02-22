@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { Coffee, Cake, Fries, Star, Package } from 'lucide-react';
+import { Coffee, Cake, Utensils, Star, Package } from 'lucide-react';
 
 export default function MobileTopNav() {
   const router = useRouter();
@@ -8,7 +8,7 @@ export default function MobileTopNav() {
   const navItems = [
     { href: '/beverages', label: 'Drinks', icon: Coffee },
     { href: '/desserts', label: 'Desserts', icon: Cake },
-    { href: '/loaded-fries', label: 'Menu', icon: Fries },
+    { href: '/loaded-fries', label: 'Menu', icon: Utensils },
     { href: '/reviews', label: 'Reviews', icon: Star },
     { href: '/orders', label: 'Orders', icon: Package },
   ];
