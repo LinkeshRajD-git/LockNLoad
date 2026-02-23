@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, CreditCard, ArrowLeft, Mail, Loader2 } from 'lucide-react';
+import { ShieldCheck, ArrowLeft, Mail, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import QRCode from 'qrcode';
@@ -37,7 +37,6 @@ export default function Checkout() {
   const { user, sendEmailOTP, verifyEmailOTP } = useAuth();
 
   const [showOtpModal, setShowOtpModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('upi');
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [upiId] = useState('linkeshrajd@obsbi');
   const [qrUrl, setQrUrl] = useState('');
@@ -46,7 +45,6 @@ export default function Checkout() {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
-  const processingRef = useRef(false);
 
   const subtotal = getTotal();
   const discount = subtotal > 299 ? parseFloat((subtotal * 0.10).toFixed(2)) : 0;
@@ -220,24 +218,25 @@ export default function Checkout() {
           {/* Payment Method */}
           <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-4 sm:p-6 mb-6">
             <h2 className="text-lg sm:text-xl font-bold text-white mb-4">Payment Method</h2>
-              <div className="space-y-3">
-                <div className="p-3 border border-gray-800 rounded-xl bg-gray-900/60">
-                  <p className="text-gray-300 mb-2">Pay via UPI</p>
-                  <div className="flex flex-col sm:flex-row items-center gap-4 bg-gray-800 p-3 rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-mono text-white font-semibold">{upiId}</p>
-                      <p className="text-xs text-gray-400">Amount: ₹{totalAmount.toFixed(2)}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {qrUrl && <img src={qrUrl} alt="UPI QR" className="w-20 h-20 bg-white rounded-md" />}
-                      <div className="flex flex-col gap-2">
-                        <button onClick={() => { navigator.clipboard?.writeText(upiId); toast.success('UPI copied'); }} className="text-sm text-[#E94E24] font-semibold">Copy</button>
-                        <button onClick={() => setShowUpiModal(true)} className="bg-[#E94E24] text-white px-3 py-2 rounded-lg text-sm">I have paid</button>
-                      </div>
+            <div className="space-y-3">
+              <div className="p-3 border border-gray-800 rounded-xl bg-gray-900/60">
+                <p className="text-gray-300 mb-2">Pay via UPI</p>
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-gray-800 p-3 rounded-lg">
+                  <div className="flex-1">
+                    <p className="font-mono text-white font-semibold">{upiId}</p>
+                    <p className="text-xs text-gray-400">Amount: ₹{totalAmount.toFixed(2)}</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {qrUrl && (
+                      <img src={qrUrl} alt="UPI QR" className="w-20 h-20 bg-white rounded-md" />
+                    )}
+                    <div className="flex flex-col gap-2">
+                      <button onClick={() => { navigator.clipboard?.writeText(upiId); toast.success('UPI copied'); }} className="text-sm text-[#E94E24] font-semibold">Copy</button>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
           </div>
 
           <button
@@ -248,7 +247,7 @@ export default function Checkout() {
             {payLoading ? (
               <><Loader2 size={20} className="animate-spin" /> Processing...</>
             ) : (
-              `Place Order · ₹${totalAmount.toFixed(2)} →`
+              `I have paid · ₹${totalAmount.toFixed(2)} →`
             )}
           </button>
         </div>
