@@ -1,4 +1,10 @@
 import nodemailer from "nodemailer";
+let sendgrid;
+try {
+  sendgrid = await import('@sendgrid/mail');
+} catch (e) {
+  sendgrid = null;
+}
 
 if (typeof global.__otpStore === "undefined") global.__otpStore = {};
 const otpStore = global.__otpStore;
@@ -17,22 +23,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ message: "Email is required" });
   }
 
+
   const smtpUser = process.env.SMTP_EMAIL;
   const smtpPass = process.env.SMTP_PASSWORD;
+  const sendgridKey = process.env.SENDGRID_API_KEY;
 
-  if (!smtpUser || !smtpPass) {
-    return res.status(500).json({ message: "Email service not configured" });
+  if (!smtpUser && !sendgridKey) {
+    return res.status(500).json({ message: "Email service not configured. Set SMTP_EMAIL/SMTP_PASSWORD or SENDGRID_API_KEY." });
   }
 
   const otp = generateOTP();
   otpStore[email] = { code: otp, expiresAt: Date.now() + 5 * 60 * 1000 };
 
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: smtpUser, pass: smtpPass },
-    });
-
     const htmlBody = `
     <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fff;border-radius:16px;border:1px solid #eee;overflow:hidden;">
       <div style="background:#E94E24;padding:24px;text-align:center;">
@@ -50,6 +53,23 @@ export default async function handler(req, res) {
         <p style="color:#bbb;font-size:11px;margin:0;">Lock N Load | Open Air Theatre | +91 95978 55779</p>
       </div>
     </div>`;
+    // If SendGrid key present, use SendGrid (recommended for production)
+    if (sendgridKey && sendgrid) {
+      sendgrid.setApiKey(sendgridKey);
+      await sendgrid.send({
+        to: email,
+        from: smtpUser || 'no-reply@locknload.example.com',
+        subject: `Your Lock N Load OTP: ${otp}`,
+        html: htmlBody,
+      });
+      return res.status(200).json({ success: true, message: 'OTP sent via SendGrid' });
+    }
+
+    // Fallback to Nodemailer (Gmail SMTP)
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: smtpUser, pass: smtpPass },
+    });
 
     await transporter.sendMail({
       from: `"Lock N Load" <${smtpUser}>`,
@@ -58,9 +78,9 @@ export default async function handler(req, res) {
       html: htmlBody,
     });
 
-    return res.status(200).json({ success: true, message: "OTP sent to your email!" });
+    return res.status(200).json({ success: true, message: 'OTP sent via SMTP' });
   } catch (err) {
-    console.error("Email OTP send error:", err.message);
-    return res.status(500).json({ message: "Failed to send OTP. Please try again." });
+    console.error('Email OTP send error:', err);
+    return res.status(500).json({ message: 'Failed to send OTP. ' + (err.message || '') });
   }
 }
