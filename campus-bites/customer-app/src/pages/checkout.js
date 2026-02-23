@@ -38,7 +38,7 @@ export default function Checkout() {
 
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [showUpiModal, setShowUpiModal] = useState(false);
-  const [upiId] = useState('linkeshrajd@obsbi');
+  const [upiId] = useState('linkeshrajd@oksbi');
   const [qrUrl, setQrUrl] = useState('');
   const [utr, setUtr] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
