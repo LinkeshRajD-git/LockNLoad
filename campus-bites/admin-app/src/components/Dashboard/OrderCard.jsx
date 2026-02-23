@@ -20,7 +20,10 @@ export default function OrderCard({ order, onUpdateStatus }) {
         </div>
         <div className="text-right">
           <p className="font-bold text-2xl text-red-600">₹{order.totalAmount}</p>
-          <p className="text-sm text-gray-600">{order.paymentMethod === 'cod' ? 'COD' : 'UPI Paid'}</p>
+          <p className="text-sm text-gray-600">{order.paymentMethod === 'cod' ? 'COD' : (order.paymentMethod === 'upi' ? 'UPI' : order.paymentMethod)}</p>
+          {order.upiPaymentId && (
+            <p className="text-xs text-gray-500 mt-1">Txn ID: <span className="font-mono text-gray-700">{order.upiPaymentId}</span></p>
+          )}
         </div>
       </div>
 
@@ -41,6 +44,14 @@ export default function OrderCard({ order, onUpdateStatus }) {
         </span>
 
         <div className="flex gap-2">
+          {order.paymentMethod === 'upi' && order.upiPaymentId && order.orderStatus === 'pending' && (
+            <button
+              onClick={() => onUpdateStatus(order.id, 'preparing')}
+              className="bg-amber-500 text-white px-3 py-2 rounded-lg hover:bg-amber-600 text-sm"
+            >
+              Confirm Payment
+            </button>
+          )}
           {order.orderStatus === 'pending' && (
             <button
               onClick={() => onUpdateStatus(order.id, 'preparing')}

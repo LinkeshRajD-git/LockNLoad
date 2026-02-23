@@ -232,7 +232,7 @@ export default function Checkout() {
                       {qrUrl && <img src={qrUrl} alt="UPI QR" className="w-20 h-20 bg-white rounded-md" />}
                       <div className="flex flex-col gap-2">
                         <button onClick={() => { navigator.clipboard?.writeText(upiId); toast.success('UPI copied'); }} className="text-sm text-[#E94E24] font-semibold">Copy</button>
-                        <button onClick={() => setShowUpiModal(true)} className="bg-[#E94E24] text-white px-3 py-2 rounded-lg text-sm">I have paid</button>
+                         </div>
                       </div>
                     </div>
                   </div>
@@ -248,7 +248,7 @@ export default function Checkout() {
             {payLoading ? (
               <><Loader2 size={20} className="animate-spin" /> Processing...</>
             ) : (
-              `Place Order · ₹${totalAmount.toFixed(2)} →`
+              `I have paid · ₹${totalAmount.toFixed(2)} →`
             )}
           </button>
         </div>
