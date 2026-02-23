@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { ShieldCheck, CreditCard, ArrowLeft, Mail, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import Script from 'next/script';
+import QRCode from 'qrcode';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -37,15 +37,15 @@ export default function Checkout() {
   const { user, sendEmailOTP, verifyEmailOTP } = useAuth();
 
   const [showOtpModal, setShowOtpModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('razorpay');
+  const [paymentMethod, setPaymentMethod] = useState('upi');
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [upiId] = useState('linkeshrajd@obsbi');
+  const [qrUrl, setQrUrl] = useState('');
   const [utr, setUtr] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
-  const [sdkReady, setSdkReady] = useState(false);
   const processingRef = useRef(false);
 
   const subtotal = getTotal();
@@ -57,8 +57,12 @@ export default function Checkout() {
   }, [cart]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Razorpay) setSdkReady(true);
-  }, []);
+    // generate UPI QR whenever UPI id or total changes
+    const upiString = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent('Lock N Load')}&am=${totalAmount.toFixed(2)}&cu=INR`;
+    QRCode.toDataURL(upiString)
+      .then(url => setQrUrl(url))
+      .catch(() => setQrUrl(''));
+  }, [upiId, totalAmount]);
 
   const handleSendOtp = async () => {
     setOtpLoading(true);
@@ -84,13 +88,9 @@ export default function Checkout() {
     try {
       await verifyEmailOTP(otpString);
       setShowOtpModal(false);
-      if (paymentMethod === 'upi') {
-        // show UPI instructions/modal to enter UTR
-        setShowUpiModal(true);
-        setOtp(['', '', '', '', '', '']);
-        return;
-      }
-      await initiateRazorpayPayment();
+      // only UPI payment available now
+      setShowUpiModal(true);
+      setOtp(['', '', '', '', '', '']);
     } catch (e) {
       setOtp(['', '', '', '', '', '']);
     } finally {
@@ -98,105 +98,7 @@ export default function Checkout() {
     }
   };
 
-  const initiateRazorpayPayment = async () => {
-    if (processingRef.current) return;
-    processingRef.current = true;
-    setPayLoading(true);
-
-    try {
-      const orderId = generateOrderId();
-      const rawPhone = (user.phone || user.phoneNumber || '9999999999')
-        .replace(/^\+91/, '').replace(/\D/g, '').slice(-10).padStart(10, '9');
-
-      // 1. Create Razorpay order on server
-      const createRes = await fetch('/api/razorpay-create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: totalAmount, orderId }),
-      });
-      const createData = await createRes.json();
-
-      if (!createRes.ok || !createData.razorpayOrderId) {
-        toast.error(createData.message || 'Payment initialization failed');
-        processingRef.current = false;
-        setPayLoading(false);
-        return;
-      }
-
-      setPayLoading(false);
-
-      // 2. Open Razorpay modal
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: createData.amount,
-        currency: createData.currency,
-        name: 'Lock N Load',
-        description: `Order ${orderId}`,
-        order_id: createData.razorpayOrderId,
-        prefill: {
-          name: user.displayName || user.name || 'Customer',
-          email: user.email,
-          contact: rawPhone,
-        },
-        theme: { color: '#E94E24' },
-        modal: {
-          ondismiss: () => {
-            toast.error('Payment cancelled. Please try again.');
-            processingRef.current = false;
-          },
-        },
-        handler: async (response) => {
-          // 3. Payment success — save order + send email
-          try {
-            const orderDoc = await addDoc(collection(db, 'orders'), {
-              orderId,
-              userId: user.uid,
-              userName: user.displayName || user.name || 'Customer',
-              userEmail: user.email,
-              userPhone: rawPhone,
-              items: cart,
-              totalAmount,
-              discount,
-              paymentMethod: 'razorpay',
-              razorpayOrderId: createData.razorpayOrderId,
-              razorpayPaymentId: response.razorpay_payment_id,
-              orderStatus: 'pending',
-              createdAt: serverTimestamp(),
-            });
-
-            await sendOrderEmail({
-              email: user.email,
-              customerName: user.displayName || user.name || 'Customer',
-              orderId,
-              orderItems: cart,
-              totalAmount,
-              paymentMethod: 'razorpay',
-            });
-
-            clearCart();
-            router.push(`/order-confirmation?orderId=${orderDoc.id}&method=razorpay`);
-          } catch (err) {
-            console.error('Order save error:', err);
-            toast.error('Payment done but order save failed. Contact support.');
-            processingRef.current = false;
-          }
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', (response) => {
-        toast.error(response.error.description || 'Payment failed. Please try again.');
-        processingRef.current = false;
-        router.push('/checkout');
-      });
-      rzp.open();
-    } catch (err) {
-      console.error('Razorpay init error:', err);
-      toast.error('Could not initiate payment. Please try again.');
-      processingRef.current = false;
-      setPayLoading(false);
-    }
-  };
+  
 
   const handlePayment = () => {
     setShowOtpModal(true);
@@ -255,11 +157,7 @@ export default function Checkout() {
 
   return (
     <>
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        onLoad={() => setSdkReady(true)}
-        strategy="lazyOnload"
-      />
+      {/* UPI only — no external payment SDK */}
 
       <div className="min-h-screen bg-black pt-24 pb-8">
         <div className="max-w-3xl mx-auto px-4 relative z-10">
@@ -322,58 +220,33 @@ export default function Checkout() {
           {/* Payment Method */}
           <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-4 sm:p-6 mb-6">
             <h2 className="text-lg sm:text-xl font-bold text-white mb-4">Payment Method</h2>
-            <div className="space-y-3">
-              <label className="flex items-center gap-3 p-3 border border-gray-800 rounded-xl cursor-pointer">
-                <input type="radio" name="payment" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={() => setPaymentMethod('razorpay')} className="w-4 h-4" />
-                <div className="flex items-center gap-3">
-                  <CreditCard className="text-[#E94E24]" size={22} />
-                  <div>
-                    <p className="font-semibold text-white">Pay Online via Razorpay</p>
-                    <p className="text-sm text-gray-400">UPI · Cards · Net Banking · Wallets</p>
-                  </div>
-                </div>
-              </label>
-
-              <label className="flex items-center gap-3 p-3 border border-gray-800 rounded-xl cursor-pointer">
-                <input type="radio" name="payment" value="upi" checked={paymentMethod === 'upi'} onChange={() => setPaymentMethod('upi')} className="w-4 h-4" />
-                <div className="flex items-center gap-3 justify-between w-full">
-                  <div className="flex items-center gap-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E94E24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M7 9h10" /></svg>
-                    <div>
-                      <p className="font-semibold text-white">Pay via UPI (Manual)</p>
-                      <p className="text-sm text-gray-400">Scan/Pay to the UPI ID shown, then enter transaction ID</p>
-                    </div>
-                  </div>
-                </div>
-              </label>
-
-              {paymentMethod === 'upi' && (
+              <div className="space-y-3">
                 <div className="p-3 border border-gray-800 rounded-xl bg-gray-900/60">
-                  <p className="text-gray-300 mb-2">Send payment to this UPI ID:</p>
-                  <div className="flex items-center justify-between bg-gray-800 p-3 rounded-lg">
-                    <div>
+                  <p className="text-gray-300 mb-2">Pay via UPI</p>
+                  <div className="flex flex-col sm:flex-row items-center gap-4 bg-gray-800 p-3 rounded-lg">
+                    <div className="flex-1">
                       <p className="font-mono text-white font-semibold">{upiId}</p>
                       <p className="text-xs text-gray-400">Amount: ₹{totalAmount.toFixed(2)}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => { navigator.clipboard?.writeText(upiId); toast.success('UPI copied'); }} className="text-sm text-[#E94E24] font-semibold">Copy</button>
-                      <button onClick={() => setShowUpiModal(true)} className="bg-[#E94E24] text-white px-3 py-2 rounded-lg text-sm">I have paid</button>
+                      {qrUrl && <img src={qrUrl} alt="UPI QR" className="w-20 h-20 bg-white rounded-md" />}
+                      <div className="flex flex-col gap-2">
+                        <button onClick={() => { navigator.clipboard?.writeText(upiId); toast.success('UPI copied'); }} className="text-sm text-[#E94E24] font-semibold">Copy</button>
+                        <button onClick={() => setShowUpiModal(true)} className="bg-[#E94E24] text-white px-3 py-2 rounded-lg text-sm">I have paid</button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
           </div>
 
           <button
             onClick={handlePayment}
-            disabled={payLoading || (paymentMethod === 'razorpay' && !sdkReady)}
+            disabled={payLoading}
             className="w-full bg-gradient-to-r from-[#E94E24] to-red-600 text-white py-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all font-bold text-lg shadow-lg shadow-[#E94E24]/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {payLoading ? (
               <><Loader2 size={20} className="animate-spin" /> Processing...</>
-            ) : (paymentMethod === 'razorpay' && !sdkReady) ? (
-              <><Loader2 size={20} className="animate-spin" /> Loading Payment...</>
             ) : (
               `Place Order · ₹${totalAmount.toFixed(2)} →`
             )}
