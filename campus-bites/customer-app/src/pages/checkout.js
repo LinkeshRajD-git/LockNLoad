@@ -37,8 +37,8 @@ export default function Checkout() {
   }, [cart]);
 
   useEffect(() => {
-    // no-op
-  }, [upiId, totalAmount]);
+    // no-op (leftover effect placeholder) — depend only on totalAmount
+  }, [totalAmount]);
 
   // OTP/email verification removed
 
