@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 export default function VerifyOTP() {
   const router = useRouter();
   const { phone } = router.query;
-  const { verifyPhoneOTP, sendPhoneOTP, user } = useAuth();
+  const { user } = useAuth();
   const displayPhone = phone ? (phone.startsWith('+') ? phone : `+91 ${phone}`) : '';
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -60,20 +60,9 @@ export default function VerifyOTP() {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      await verifyPhoneOTP(otpString);
-      toast.success('Phone verified successfully!');
-      router.push('/');
-    } catch (error) {
-      console.error('OTP verification error:', error);
-      toast.error('Invalid OTP. Please try again.');
-      setOtp(['', '', '', '', '', '']);
-      inputRefs.current[0]?.focus();
-    } finally {
-      setLoading(false);
-    }
+    // OTP verification disabled — treat as verified and redirect
+    toast.success('Phone verified (OTP disabled)');
+    router.push('/');
   };
 
   const handleResend = async () => {
@@ -82,16 +71,9 @@ export default function VerifyOTP() {
       return;
     }
     setResending(true);
-    try {
-      await sendPhoneOTP(phone);
-      toast.success('OTP resent successfully!');
-      setOtp(['', '', '', '', '', '']);
-      inputRefs.current[0]?.focus();
-    } catch (error) {
-      toast.error('Failed to resend OTP');
-    } finally {
-      setResending(false);
-    }
+    // OTP sending disabled
+    toast('OTP functionality is disabled');
+    setResending(false);
   };
 
   return (

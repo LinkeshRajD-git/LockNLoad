@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function OTPVerification({ phone, onSuccess }) {
-  const { verifyPhoneOTP, sendPhoneOTP } = useAuth();
+  // OTP flows removed; AuthContext no longer provides OTP helpers
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -15,27 +15,13 @@ export default function OTPVerification({ phone, onSuccess }) {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      await verifyPhoneOTP(otp);
-      toast.success('Phone verified successfully!');
-      if (onSuccess) onSuccess();
-    } catch (error) {
-      console.error('OTP verification error:', error);
-      toast.error('Invalid OTP. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    // OTP verification disabled; treat as verified
+    toast.success('Phone verified (OTP disabled)');
+    if (onSuccess) onSuccess();
   };
 
   const handleResend = async () => {
-    try {
-      await sendPhoneOTP(phone);
-      toast.success('OTP resent successfully!');
-    } catch (error) {
-      toast.error('Failed to resend OTP');
-    }
+    toast('OTP functionality is disabled');
   };
 
   return (

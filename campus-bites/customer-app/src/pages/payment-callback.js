@@ -3,20 +3,10 @@ import { useRouter } from 'next/router';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useCart } from '../context/CartContext';
-import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-async function sendOrderEmail(orderDetails) {
-  try {
-    await fetch('/api/send-order-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderDetails),
-    });
-  } catch (e) {
-    console.error('Email send failed:', e);
-  }
-}
+// Order email sending removed (email functionality disabled)
 
 export default function PaymentCallback() {
   const router = useRouter();
@@ -63,16 +53,7 @@ export default function PaymentCallback() {
             updatedAt: new Date(),
           });
 
-          if (orderData.userEmail) {
-            await sendOrderEmail({
-              email: orderData.userEmail,
-              customerName: orderData.userName,
-              orderId: orderData.orderId,
-              orderItems: orderData.items,
-              totalAmount: orderData.totalAmount,
-              paymentMethod: 'cashfree',
-            });
-          }
+          // Email sending intentionally disabled
 
           setOrderId(orderDoc.id);
           setStatus('success');
@@ -101,22 +82,13 @@ export default function PaymentCallback() {
       const orderDoc = snapshot.docs[0];
       const orderData = orderDoc.data();
 
-      if (paymentSuccess) {
+        if (paymentSuccess) {
         await updateDoc(doc(db, 'orders', orderDoc.id), {
           paymentStatus: 'completed',
           updatedAt: new Date(),
         });
 
-        if (orderData.userEmail) {
-          await sendOrderEmail({
-            email: orderData.userEmail,
-            customerName: orderData.userName,
-            orderId: orderData.orderId,
-            orderItems: orderData.items,
-            totalAmount: orderData.totalAmount,
-            paymentMethod: orderData.paymentMethod || 'online',
-          });
-        }
+        // Email sending intentionally disabled
 
         setOrderId(orderDoc.id);
         setStatus('success');
@@ -180,8 +152,7 @@ export default function PaymentCallback() {
         <h2 className="text-2xl font-bold text-white mb-2">Order Confirmed! 🎉</h2>
         <p className="text-gray-400 mb-2">Your order has been placed successfully.</p>
         <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3 mb-6 flex items-center gap-2 justify-center">
-          <Mail size={16} className="text-blue-400" />
-          <p className="text-blue-300 text-sm font-semibold">Confirmation email sent</p>
+          <p className="text-blue-300 text-sm font-semibold">Order confirmed</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href={`/order-confirmation?orderId=${orderId}&method=online`}>

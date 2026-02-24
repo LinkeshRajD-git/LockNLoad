@@ -20,7 +20,7 @@ export default function Home() {
       bgGradient: 'from-cyan-50 to-blue-100',
       emoji: '☕',
       description: 'Refreshing drinks & creamy shakes',
-      items: '12+ Options'
+      
     },
     {
       name: 'Desserts',
@@ -29,7 +29,7 @@ export default function Home() {
       bgGradient: 'from-pink-50 to-rose-100',
       emoji: '🍰',
       description: 'Sweet treats & indulgent cakes',
-      items: '10+ Options'
+      
     },
     {
       name: 'Loaded Fries',
@@ -38,7 +38,7 @@ export default function Home() {
       bgGradient: 'from-[#E94E24]/10 to-red-100',
       emoji: '🍟',
       description: 'Crispy fries loaded to perfection',
-      items: '15+ Options'
+      
     }
   ];
 
@@ -116,9 +116,9 @@ export default function Home() {
                         🍟
                       </div>
                       <div className="mt-4 space-y-2">
-                        <h3 className="text-3xl font-black text-white">Signature Fries</h3>
+                        <h3 className="text-3xl font-black text-white">Signature Loaded Fries (99)</h3>
                         <p className="text-gray-400">Starting from</p>
-                        <p className="text-5xl font-black gradient-text">₹49</p>
+                        <p className="text-5xl font-black gradient-text">₹99</p>
                       </div>
                     </div>
 
@@ -202,9 +202,7 @@ export default function Home() {
                           {category.emoji}
                         </div>
                         
-                        <span className={`inline-block px-3 py-1 bg-gradient-to-r ${category.gradient} text-white text-xs font-bold rounded-full mb-3`}>
-                          {category.items}
-                        </span>
+                        {/* badge removed per request */}
                         
                         <h3 className="text-2xl font-black text-white mb-2">
                           {category.name}

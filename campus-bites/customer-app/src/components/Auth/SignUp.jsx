@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function SignUp({ onSuccess }) {
-  const { signUp, sendPhoneOTP } = useAuth();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -37,7 +37,7 @@ export default function SignUp({ onSuccess }) {
 
     try {
       await signUp(formData.email, formData.password, formData.name, formData.phone);
-      await sendPhoneOTP(formData.phone);
+      // OTP is disabled; proceed as if verification completed
       if (onSuccess) onSuccess(formData.phone);
     } catch (error) {
       console.error('Signup error:', error);
