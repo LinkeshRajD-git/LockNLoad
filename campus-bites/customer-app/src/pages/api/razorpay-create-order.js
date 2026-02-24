@@ -27,7 +27,8 @@ export default async function handler(req, res) {
       receipt: orderId,
     });
 
-    return res.status(200).json({ razorpayOrderId: order.id, amount: order.amount, currency: order.currency });
+    // Return public key id as well so the client can initialize Razorpay Checkout
+    return res.status(200).json({ razorpayOrderId: order.id, amount: order.amount, currency: order.currency, keyId });
   } catch (error) {
     console.error('Razorpay create order error:', error);
     return res.status(500).json({ message: error.error?.description || 'Failed to create payment order' });
