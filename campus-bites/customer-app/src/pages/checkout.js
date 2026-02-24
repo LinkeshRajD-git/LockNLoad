@@ -97,6 +97,93 @@ export default function Checkout() {
     }
   };
 
+  // Load external script helper
+  const loadScript = (src) => {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[src="${src}"]`);
+      if (existing) return resolve(true);
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve(true);
+      script.onerror = () => reject(new Error('Script load error'));
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleRazorpay = async () => {
+    if (!user) {
+      toast.error('Please login to proceed with payment');
+      return;
+    }
+    setPayLoading(true);
+    try {
+      const orderId = generateOrderId();
+      // Create order on server
+      const res = await fetch('/api/razorpay-create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: totalAmount, orderId }),
+      });
+      if (!res.ok) throw new Error('Could not create payment order');
+      const data = await res.json();
+
+      // Load Razorpay checkout script
+      await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+
+      const options = {
+        key: data.keyId, // public key id returned by server
+        amount: data.amount, // amount in paise (server returned amount)
+        currency: data.currency || 'INR',
+        name: 'Lock N Load',
+        description: `Order ${orderId}`,
+        order_id: data.razorpayOrderId,
+        handler: async function (paymentResult) {
+          try {
+            const rawPhone = (user.phone || user.phoneNumber || '9999999999')
+              .replace(/^\+91/, '').replace(/\D/g, '').slice(-10).padStart(10, '9');
+
+            const orderDoc = await addDoc(collection(db, 'orders'), {
+              orderId,
+              userId: user.uid,
+              userName: user.displayName || user.name || 'Customer',
+              userEmail: user.email,
+              userPhone: rawPhone,
+              items: cart,
+              totalAmount,
+              discount,
+              paymentMethod: 'razorpay',
+              razorpayPaymentId: paymentResult.razorpay_payment_id,
+              razorpayOrderId: paymentResult.razorpay_order_id,
+              razorpaySignature: paymentResult.razorpay_signature,
+              orderStatus: 'paid',
+              createdAt: serverTimestamp(),
+            });
+
+            clearCart();
+            router.push(`/order-confirmation?orderId=${orderDoc.id}&method=razorpay`);
+          } catch (err) {
+            console.error('Razorpay order save error:', err);
+            toast.error('Payment succeeded but could not save order. Contact support.');
+          }
+        },
+        prefill: {
+          name: user.displayName || user.name,
+          email: user.email,
+          contact: (user.phone || user.phoneNumber || '').replace(/^\+/, ''),
+        },
+        theme: { color: '#E94E24' },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error('Razorpay checkout error:', err);
+      toast.error('Could not start payment. Try again later.');
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
   
 
   return (
@@ -112,6 +199,19 @@ export default function Checkout() {
               </button>
             </Link>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Checkout</h1>
+          </div>
+
+          {/* Razorpay Option */}
+          <div className="max-w-3xl mx-auto px-4 relative z-10 mt-4">
+            <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-4 sm:p-6 mb-6">
+              <h3 className="text-md font-bold text-white mb-2">Pay with Card / UPI (Razorpay)</h3>
+              <p className="text-sm text-gray-400 mb-3">Secure payments via Razorpay — cards, netbanking, UPI and wallets.</p>
+              <div className="flex items-center gap-3">
+                <button onClick={handleRazorpay} disabled={payLoading} className="px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-indigo-600 disabled:opacity-50">
+                  {payLoading ? 'Processing...' : `Pay ₹${totalAmount.toFixed(2)} with Razorpay`}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Order Summary */}
