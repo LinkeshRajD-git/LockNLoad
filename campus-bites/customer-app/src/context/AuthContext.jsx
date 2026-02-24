@@ -24,8 +24,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [pendingPhone, setPendingPhone] = useState(null);
-  const [pendingEmail, setPendingEmail] = useState(null);
+  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -88,119 +87,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Send OTP to Phone + Email
-  const sendPhoneOTP = async (phoneNumber, email) => {
-    try {
-      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
-      const res = await fetch('/api/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: formattedPhone, email: email || null })
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to send OTP');
-      }
-
-      const data = await res.json();
-      setPendingPhone(formattedPhone);
-      toast.success(data.emailSent ? 'OTP sent to your phone & email!' : 'OTP sent to your phone!');
-      return true;
-    } catch (error) {
-      console.error('Error sending OTP:', error);
-      toast.error('Failed to send OTP. Please try again.');
-      throw error;
-    }
-  };
-
-  // Verify Phone OTP
-  const verifyPhoneOTP = async (otp) => {
-    try {
-      if (!pendingPhone) {
-        throw new Error('No pending phone number');
-      }
-
-      const res = await fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: pendingPhone, code: otp })
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Invalid OTP');
-      }
-
-      if (user) {
-        await setDoc(doc(db, 'users', user.uid), {
-          isVerified: true,
-          phone: pendingPhone
-        }, { merge: true });
-
-        setUser((current) => current ? { ...current, isVerified: true, phone: pendingPhone } : current);
-      }
-
-      setPendingPhone(null);
-      toast.success('Phone verified successfully!');
-      return true;
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      toast.error('Invalid OTP. Please try again.');
-      throw error;
-    }
-  };
-
-  // Send OTP to Email (primary method used in checkout)
-  const sendEmailOTP = async (email) => {
-    try {
-      const res = await fetch('/api/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to send OTP');
-      }
-
-      setPendingEmail(email);
-      toast.success('OTP sent to your email!');
-      return true;
-    } catch (error) {
-      console.error('Error sending email OTP:', error);
-      toast.error(error.message || 'Failed to send OTP. Please try again.');
-      throw error;
-    }
-  };
-
-  // Verify Email OTP
-  const verifyEmailOTP = async (otp) => {
-    try {
-      const emailToVerify = pendingEmail;
-      if (!emailToVerify) throw new Error('No pending email for OTP verification');
-
-      const res = await fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailToVerify, code: otp })
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Invalid OTP');
-      }
-
-      setPendingEmail(null);
-      toast.success('Verified successfully!');
-      return true;
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      toast.error(error.message || 'Invalid OTP. Please try again.');
-      throw error;
-    }
-  };
+  // OTP-related functions removed per project settings (email/OTP flows disabled)
 
   // Reset Password
   const resetPassword = async (email) => {
@@ -300,10 +187,7 @@ export const AuthProvider = ({ children }) => {
     resetPassword,
     signInWithGoogle,
     signInWithApple,
-    sendPhoneOTP,
-    verifyPhoneOTP,
-    sendEmailOTP,
-    verifyEmailOTP
+    // OTP functions removed
   };
 
   return (

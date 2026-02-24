@@ -9,17 +9,7 @@ import { Loader2, XCircle } from 'lucide-react';
 import Script from 'next/script';
 import Link from 'next/link';
 
-async function sendOrderEmail(orderDetails) {
-  try {
-    await fetch('/api/send-order-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderDetails),
-    });
-  } catch (e) {
-    console.error('Email send failed:', e);
-  }
-}
+// Order email sending removed (email functionality disabled)
 
 export default function CashfreePayment() {
   const router = useRouter();
@@ -118,17 +108,7 @@ export default function CashfreePayment() {
 
         const docRef = await addDoc(collection(db, 'orders'), orderData);
 
-        // 6. Send order confirmation email
-        if (pending.customerEmail) {
-          await sendOrderEmail({
-            email: pending.customerEmail,
-            customerName: pending.customerName,
-            orderId: pending.orderId,
-            orderItems: orderData.items,
-            totalAmount: pending.totalAmount,
-            paymentMethod: 'cashfree',
-          });
-        }
+        // Email sending intentionally disabled
 
         sessionStorage.removeItem('pendingCashfreeOrder');
         clearCart();

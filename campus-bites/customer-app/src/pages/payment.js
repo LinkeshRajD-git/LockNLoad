@@ -17,18 +17,7 @@ function generateOrderId() {
   return `LNL-${datePart}-${randomPart}`;
 }
 
-// Send order confirmation Email
-async function sendOrderEmail(orderDetails) {
-  try {
-    await fetch('/api/send-order-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderDetails)
-    });
-  } catch (error) {
-    console.error('Failed to send order email:', error);
-  }
-}
+// Order email sending removed (email functionality disabled)
 
 export default function Payment() {
   const router = useRouter();
@@ -80,17 +69,7 @@ export default function Payment() {
 
       const docRef = await addDoc(collection(db, 'orders'), orderData);
 
-      // Send confirmation email
-      if (user.email) {
-        await sendOrderEmail({
-          email: user.email,
-          customerName: customerName,
-          orderId: uniqueOrderId,
-          orderItems: orderData.items,
-          totalAmount: totalAmount,
-          paymentMethod: 'cod'
-        });
-      }
+      // Email sending intentionally disabled
 
       clearCart();
       router.push(`/order-confirmation?orderId=${docRef.id}&method=cod`);

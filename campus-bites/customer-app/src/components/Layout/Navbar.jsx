@@ -48,7 +48,7 @@ export default function Navbar() {
                 <img src="/logo.png" alt="Lock N Load" className="relative w-14 h-14 object-cover rounded-2xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-xl shadow-[#E94E24]/30" />
               </div>
               <div className="hidden sm:block">
-                <span className="text-2xl font-black bg-gradient-to-r from-[#E94E24] via-red-500 to-[#E94E24] bg-clip-text text-transparent">
+                <span className="text-2xl font-black bg-gradient-to-r from-[#E94E24] via-red-500 to-[#E94E24] bg-clip-text text-transparent whitespace-nowrap leading-none">
                   Lock N Load
                 </span>
                 <span className="block text-xs text-gray-400 font-semibold tracking-wider uppercase">Premium Loaded Fries</span>
@@ -158,6 +158,7 @@ export default function Navbar() {
                   >
                     <span className="text-2xl">{link.emoji}</span>
                     <span className="text-lg">{link.label}</span>
+                    {link.items && <span className="ml-2 text-xs text-gray-400">{link.items}</span>}
                   </span>
                 </Link>
               ))}

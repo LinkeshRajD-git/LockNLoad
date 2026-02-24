@@ -2,12 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, ArrowLeft, Mail, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import QRCode from 'qrcode';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
 function generateOrderId() {
   const now = new Date();
@@ -19,31 +19,17 @@ function generateOrderId() {
   return `LNL-${datePart}-${randomPart}`;
 }
 
-async function sendOrderEmail(orderDetails) {
-  try {
-    await fetch('/api/send-order-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderDetails),
-    });
-  } catch (e) {
-    console.error('Email error:', e);
-  }
-}
+// Order confirmation email removed
 
 export default function Checkout() {
   const router = useRouter();
   const { cart, getTotal, clearCart } = useCart();
-  const { user, sendEmailOTP, verifyEmailOTP } = useAuth();
+  const { user } = useAuth();
 
-  const [showOtpModal, setShowOtpModal] = useState(false);
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [upiId] = useState('linkeshrajd@oksbi');
   const [qrUrl, setQrUrl] = useState('');
   const [utr, setUtr] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
 
   const subtotal = getTotal();
@@ -62,45 +48,12 @@ export default function Checkout() {
       .catch(() => setQrUrl(''));
   }, [upiId, totalAmount]);
 
-  const handleSendOtp = async () => {
-    setOtpLoading(true);
-    try {
-      await sendEmailOTP(user.email);
-      setOtpSent(true);
-    } catch (e) {}
-    finally { setOtpLoading(false); }
-  };
-
-  const handleOtpChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return;
-    const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
-    setOtp(newOtp);
-    if (value && index < 5) document.getElementById(`otp-${index + 1}`)?.focus();
-  };
-
-  const handleVerifyAndPay = async () => {
-    const otpString = otp.join('');
-    if (otpString.length !== 6) { toast.error('Enter 6-digit OTP'); return; }
-    setOtpLoading(true);
-    try {
-      await verifyEmailOTP(otpString);
-      setShowOtpModal(false);
-      // only UPI payment available now
-      setShowUpiModal(true);
-      setOtp(['', '', '', '', '', '']);
-    } catch (e) {
-      setOtp(['', '', '', '', '', '']);
-    } finally {
-      setOtpLoading(false);
-    }
-  };
+  // OTP/email verification removed
 
   
 
   const handlePayment = () => {
-    setShowOtpModal(true);
-    handleSendOtp();
+    setShowUpiModal(true);
   };
 
   const handleConfirmUpi = async () => {
@@ -130,16 +83,7 @@ export default function Checkout() {
         createdAt: serverTimestamp(),
       });
 
-      await sendOrderEmail({
-        email: user.email,
-        customerName: user.displayName || user.name || 'Customer',
-        orderId,
-        orderItems: cart,
-        totalAmount,
-        paymentMethod: 'UPI',
-        upiId,
-        upiPaymentId: utr.trim(),
-      });
+      // Order confirmation email removed
 
       clearCart();
       setShowUpiModal(false);
@@ -152,6 +96,8 @@ export default function Checkout() {
       setPayLoading(false);
     }
   };
+
+  
 
   return (
     <>
@@ -209,9 +155,6 @@ export default function Checkout() {
             <div className="space-y-2 text-gray-300">
               <p><span className="font-semibold text-gray-400">Name:</span> {user?.displayName || user?.name || 'N/A'}</p>
               <p><span className="font-semibold text-gray-400">Email:</span> {user?.email}</p>
-              <p className="text-xs text-blue-400 mt-1 flex items-center gap-1">
-                <Mail size={12} /> OTP for order verification will be sent to this email
-              </p>
             </div>
           </div>
 
@@ -252,63 +195,7 @@ export default function Checkout() {
           </button>
         </div>
 
-        {/* OTP Modal */}
-        {showOtpModal && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-900 border border-gray-800 rounded-3xl p-5 sm:p-8 max-w-md w-full">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <ShieldCheck size={32} className="text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-2">Verify Your Order</h3>
-                <p className="text-gray-400 text-sm">
-                  {otpSent ? `OTP sent to ${user?.email}` : 'Sending OTP to your email...'}
-                </p>
-              </div>
-              <div className="flex gap-1.5 sm:gap-2 justify-center mb-6">
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    id={`otp-${index}`}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Backspace' && !digit && index > 0) {
-                        document.getElementById(`otp-${index - 1}`)?.focus();
-                      }
-                    }}
-                    className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold bg-gray-800 border border-gray-700 rounded-lg sm:rounded-xl text-white focus:border-green-500 focus:outline-none transition-all"
-                  />
-                ))}
-              </div>
-              <div className="space-y-3">
-                <button
-                  onClick={handleVerifyAndPay}
-                  disabled={otpLoading || otp.join('').length !== 6}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 rounded-xl font-bold disabled:opacity-50"
-                >
-                  {otpLoading ? 'Verifying...' : 'Verify & Proceed to Payment'}
-                </button>
-                <button
-                  onClick={() => { setShowOtpModal(false); setOtp(['','','','','','']); setOtpSent(false); }}
-                  className="w-full bg-gray-800 text-gray-300 py-3 rounded-xl font-semibold hover:bg-gray-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSendOtp}
-                  disabled={otpLoading}
-                  className="w-full text-[#E94E24] py-2 font-semibold hover:text-red-400 disabled:opacity-50"
-                >
-                  Resend OTP
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* OTP Modal removed */}
         {/* UPI Confirmation Modal */}
         {showUpiModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
